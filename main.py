@@ -69,7 +69,7 @@ def calc_vertical_section_index(whichturn):
     ascends for every stretch of 1s and descends for every stretch of -1s.
     Example:
 
-        >> calc_vertical_secion_index([-1, -1, -1, 1, 1, 1, 1])
+        >>> calc_vertical_secion_index([-1, -1, -1, 1, 1, 1, 1])
         [2, 1, 0, 0, 1, 2, 3]
     """
     # Do error checking for good measure
@@ -356,31 +356,36 @@ def main(args):
     params = dict(DEFAULT_PARAMS)
     params.update(calc_extra_params(DEFAULT_PARAMS))
 
+    def flip(p):
+        x, y = zip(*p)
+        return zip(y, x)
+
     # Get all electrode points
     layers = {}
-    layers["0"] = [calc_rf_points(params)]
+    layers["0"] = [flip(calc_rf_points(params))]
     for i in range(params["numelectrodes"]):
-        layers[str(i + 1)] = [calc_dc_points(params, Align.LEFT, i)]
-        layers[str(i + 11)] = [calc_dc_points(params, Align.RIGHT, i)]
+        layers[str(i + 1)] = [flip(calc_dc_points(params, Align.LEFT, i))]
+        layers[str(i + 11)] = [flip(calc_dc_points(params, Align.RIGHT, i))]
     layers["21"] = [
-        calc_center_points(params, Align.CENTER),
-        calc_center_pads(params, Align.LEFT),
-        calc_center_pads(params, Align.RIGHT)
+        flip(calc_center_points(params, Align.CENTER)),
+        flip(calc_center_pads(params, Align.LEFT)),
+        flip(calc_center_pads(params, Align.RIGHT))
     ]
     layers["22"] = [
-        calc_therm_points(params, Align.LEFT),
-        calc_therm_points(params, Align.RIGHT)
+        flip(calc_therm_points(params, Align.LEFT)),
+        flip(calc_therm_points(params, Align.RIGHT))
     ]
 
     # Define region to cut out from ground plane
     extpolys = [
-            extend_poly(params["gap"], p) for (_, polys) in layers.iteritems()
-                                          for p in polys]
+            extend_poly(params["gap"], p, True)
+                for (_, polys) in layers.iteritems()
+                for p in polys]
 
     w = 0.5 * params["totalwidth"]
     h = 0.5 * params["totalheight"]
 
-    gndplane = Polygon([(-w, -h), (w, -h), (w, h), (-w, h)])
+    gndplane = Polygon([(-h, -w), (h, -w), (h, w), (-h, w)])
     for p in extpolys:
         gndplane = gndplane - Polygon(p)
 
@@ -402,7 +407,7 @@ def main(args):
     drawing = dxf.drawing(path)
     for (k, quads) in layers.iteritems():
         for q in quads:
-            drawing.add(dxf.face3d(q, layer=k))
+            drawing.add(dxf.face3d(flip(q), layer=k))
     drawing.save()
     print("Wrote to '{}'".format(path))
 

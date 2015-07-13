@@ -39,7 +39,10 @@ def extend_poly(margin, points, cw=False):
         if dtheta == 0:
             continue
 
-        d = margin / sin(dtheta)
+        if cw:
+            d = -margin / sin(dtheta)
+        else:
+            d = margin / sin(dtheta)
 
         theta = 0.5 * (theta1 + theta2)
         r = (d * cos(theta), d * sin(theta))
