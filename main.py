@@ -181,37 +181,6 @@ def calc_center_points(params, side):
 
     return ps
 
-"""
-def calc_cutout_points(params, vside, hside):
-    w = 0.5 * params["totalwidth"]
-    h = 0.5 * params["totalheight"]
-    gpcl = params["groundplanecutoutlength"]
-    step = 100
-    n = int(2 * gpcl / step)
-
-    p = [(-w, -h), (-w + gpcl, -h)]
-    xs = [-w, -w + gpcl]
-    ys = [-h, -h]
-    for i in range(n):
-        xs[2 + i] = xs[2 + i - 1] - step * ((i + 1) % 2)
-        ys[2 + i] = ys[2 + i - 1] + step * (i % 2)
-
-    if vside == Align.TOP:
-        ys = map(operator.neg, ys)
-    if hside == Align.LEFT:
-        xs = map(operator.neg, xs)
-
-    ps = zip(xs, ys)
-
-    # Error checking
-    for (x, y) in ps:
-        if abs(x) > w or abs(y) > h:
-            raise RuntimeError("calc_cutout_points: cutout points exceed chip "
-                    "size")
-
-    return ps
-"""
-
 def calc_center_pads(params, side):
     if side == Align.LEFT:
         bpcp = params["dcpadcenterpositionsleft"]
@@ -383,37 +352,30 @@ def calc_therm_points(params, side):
 
     return ps
 
-def display(params):
-    import matplotlib.pyplot as plt
-
-    for pts in points:
-        print(pts)
-        pts.append(pts[0])
-        x, y = zip(*pts)
-        plt.plot(x, y, 'b-')
-
-    plt.xlim(-6000, 6000)
-    plt.ylim(-6000, 6000)
-    plt.show()
-
 def main(args):
     params = dict(DEFAULT_PARAMS)
     params.update(calc_extra_params(DEFAULT_PARAMS))
 
     # Get all electrode points
-    polys = []
-    polys.append(calc_center_points(params, Align.CENTER))
-    polys.append(calc_center_pads(params, Align.LEFT))
-    polys.append(calc_center_pads(params, Align.RIGHT))
-    polys.append(calc_rf_points(params))
+    layers = {}
+    layers["0"] = [calc_rf_points(params)]
     for i in range(params["numelectrodes"]):
-        polys.append(calc_dc_points(params, Align.LEFT, i))
-        polys.append(calc_dc_points(params, Align.RIGHT, i))
-    polys.append(calc_therm_points(params, Align.LEFT))
-    polys.append(calc_therm_points(params, Align.RIGHT))
+        layers[str(i + 1)] = [calc_dc_points(params, Align.LEFT, i)]
+        layers[str(i + 11)] = [calc_dc_points(params, Align.RIGHT, i)]
+    layers["21"] = [
+        calc_center_points(params, Align.CENTER),
+        calc_center_pads(params, Align.LEFT),
+        calc_center_pads(params, Align.RIGHT)
+    ]
+    layers["22"] = [
+        calc_therm_points(params, Align.LEFT),
+        calc_therm_points(params, Align.RIGHT)
+    ]
 
     # Define region to cut out from ground plane
-    extpolys = map(lambda p: extend_poly(params["gap"], p), polys)
+    extpolys = [
+            extend_poly(params["gap"], p) for (_, polys) in layers.iteritems()
+                                          for p in polys]
 
     w = 0.5 * params["totalwidth"]
     h = 0.5 * params["totalheight"]
@@ -422,37 +384,29 @@ def main(args):
     for p in extpolys:
         gndplane = gndplane - Polygon(p)
 
+    layers["GROUND"] = [gndplane]
+
     # Turn all geometry into quads
-
-    # Mapping tristrip_to_quads gives a list of lists of quads, which
-    # needs to be flattened
-    to_quads = lambda p: [quad for quadlist in map(tristrip_to_quads,
-            p.triStrip()) for quad in quadlist]
-
-    gndplanequads = to_quads(gndplane)
-
-    electrodequadlist = []
-    for p in polys:
-        electrodequadlist.append(to_quads(Polygon(p)))
+    for k in layers.keys():
+        # Each layer is a list of polys, and mapping tristrip_to_quads
+        # gives a list of lists of quads, which needs to be flattened
+        layers[k] = [
+                quad for p in layers[k]
+                     for quads in map(tristrip_to_quads, Polygon(p).triStrip())
+                     for quad in quads]
 
     path = os.path.abspath(
             datetime.now().strftime("./newtrap_%Y%m%d_%H%M%S.dxf"))
 
     # Create DXF file
     drawing = dxf.drawing(path)
-    
-    # Add ground layer
-    drawing.add_layer("GROUND")
-    for q in gndplanequads:
-        drawing.add(dxf.face3d(q, layer="GROUND"))
-
-    for i in range(len(electrodequadlist)):
-        drawing.add_layer(str(i))
-        for q in electrodequadlist[i]:
-            drawing.add(dxf.face3d(q, layer=str(i)))
-
+    for (k, quads) in layers.iteritems():
+        for q in quads:
+            drawing.add(dxf.face3d(q, layer=k))
     drawing.save()
     print("Wrote to '{}'".format(path))
+
+    return 0
 
 if __name__ == "__main__":
     main(sys.argv)
