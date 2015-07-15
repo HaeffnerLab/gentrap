@@ -1,140 +1,5 @@
 import operator
 
-# TODO rename everything nicer
-DEFAULT_PARAMS = {
-    # Number of electrodes per side
-    "numelectrodes": 10,
-    # DC electrode widths
-    "dcwidths": [400, 400, 400, 400, 400, 200, 400, 400, 400, 400],
-    # DC electrode length
-    "dclength": 300,
-    # Gap between electrodes and ground plane
-    "gap": 10,
-    # Width and length of center electrode
-    "centerwidth": 320,
-    "centerlength": 11000,
-    # Width of left and right RF electrodes
-    "rfwidthleft": 120,
-    "rfwidthright": 120,
-    # Length of both RFs
-    "rflength": 11500,
-    # Width of bridge between electrode and bonding pad
-    "bridgewidth": 50,
-    # Gap between bonding pads
-    "padgaps": [100, 100, 450, 100, 100, 100, 100, 100, 100],
-    # Overall dimensions of board
-    "totalwidth": 12000,
-    "totalheight": 12000,
-    # XXX undocumented
-    "spacefromedge": 100,
-    # XXX undocumented
-    "centerspacefromedge": 3000,
-    # XXX undocumented
-    "rfdcbondinggap": 10,
-    # XXX undocumented
-    "groundplanecutoutlength": 0,
-    # XXX undocumented
-    "dcleadspacing": 130,
-    # XXX undocumented
-    "rfpadoffset": 680,
-    # Offset in X direction of DC bonding pad array on left and right
-    "dcpadoffset": 125,
-    # Dimesnions of DC bonding pads
-    "dcpadx": 400,
-    "dcpadz": 400,
-    # Dimensions of RF bonding pads
-    "rfpadx": 400,
-    "rfpadz": 400,
-    # Dimensions and position of thermometer placement pad
-    "thermpadz": 400,
-    "thermpadx": 600,
-    "thermpadoffsxleft": 1200,
-    "thermpadoffsxright": 500,
-    # Width of fingers attached to center electrode pads
-    "fingerwidth": 40,
-    # Round dimensions to this resolution (in microns)
-    "resolution": 0.1,
-}
-
-def calc_vertical_section_index(whichturn):
-    """
-    Takes a "whichturn" list of 1s and -1s and creates a list which
-    ascends for every stretch of 1s and descends for every stretch of -1s.
-    Example:
-
-        >>> calc_vertical_section_index([-1, -1, -1, 1, 1, 1, 1])
-        [2, 1, 0, 0, 1, 2, 3]
-    """
-    # Do error checking for good measure
-    for i in range(len(whichturn)):
-        if whichturn[i] != 1 and whichturn[i] != -1:
-            raise RuntimeError("calc_vertical_section_index: Invalid whichturn"
-                    "index {}: {}".format(i, whichturn[i]))
-
-    my_range = lambda n: range(n) if n >= 0 else range(-n - 1, -1, -1)
-
-    vsi = []
-    count = 0
-    for i in range(len(whichturn)):
-        count += whichturn[i]
-        if i + 1 == len(whichturn) or whichturn[i] != whichturn[i + 1]:
-            vsi += my_range(count)
-            count = 0
-
-    return vsi
-
-# Calcuate dictionary of other layout parameters
-def calc_extra_params(params):
-    numelectrodes = params["numelectrodes"]
-    dcwidths = params["dcwidths"]
-    gap = params["gap"]
-    padgaps = params["padgaps"]
-    dcpadoffset = params["dcpadoffset"]
-    dcpadz = params["dcpadz"]
-
-    # Calculate DC center positions
-
-    # Constant offsets
-    center_pos_offset = -0.5 * (sum(dcwidths) + (numelectrodes - 1) * gap)
-    pad_center_pos_offset = dcpadoffset + 0.5 * dcpadz - 0.5 * (numelectrodes *
-            dcpadz + sum(padgaps)) - (numelectrodes - 1) * gap
-
-    # DC electrode absolute center positions
-    dccenterpositions = [0.5 * dcwidths[i] + sum(dcwidths[:i]) + i * gap +
-            center_pos_offset for i in range(numelectrodes)]
-
-    # DC electrode bonding pad absolute center positioins
-    dcpadcenterpositionsleft = [i * (dcpadz + 2 * gap) + sum(padgaps[:i]) +
-            pad_center_pos_offset for i in range(numelectrodes)]
-
-    # useless or what?
-    dcpadcenterpositionsright = dcpadcenterpositionsleft
-
-    # Calculate bonding pad bridge layout
-
-    sign = lambda x: 1 if x > 0 else -1 if x < 0 else 0
-
-    # These tell which way to turn to go from the electrode to the
-    # bonding pad, an unnecessarily complex system for sure.
-    # -1 means turn "down" (to negative z), +1 means turn "up".
-    whichturnleft = map(sign, map(operator.sub, dcpadcenterpositionsleft,
-            dccenterpositions))
-    whichturnright = map(sign, map(operator.sub, dcpadcenterpositionsright,
-            dccenterpositions))
-
-    verticalsectionindexleft = calc_vertical_section_index(whichturnleft)
-    verticalsectionindexright = calc_vertical_section_index(whichturnright)
-
-    return {
-        "dccenterpositions": dccenterpositions,
-        "dcpadcenterpositionsleft": dcpadcenterpositionsleft,
-        "dcpadcenterpositionsright": dcpadcenterpositionsright,
-        "whichturnleft": whichturnleft,
-        "whichturnright": whichturnright,
-        "verticalsectionindexleft": verticalsectionindexleft,
-        "verticalsectionindexright": verticalsectionindexright
-    }
-
 class Align:
     BOTTOM = -2
     LEFT = -1
@@ -144,7 +9,7 @@ class Align:
 
 # Faces for the center electrode.
 def calc_center_points(params, side):
-    d = 0.5 * params["centerwidth"]
+    d = 0.5 * params["center_width"]
 
     if side == Align.CENTER:
         x1 = -d
@@ -156,17 +21,17 @@ def calc_center_points(params, side):
         x1 = -0.5 * params["gap"]
         x2 = -d
 
-    y1 = -0.5 * params["centerlength"]
-    y2 = 0.5 * params["rflength"] + params["rfdcbondinggap"] + \
-            params["bridgewidth"]
+    y1 = -0.5 * params["center_length"]
+    y2 = 0.5 * params["rf_length"] + params["rf_center_bridge_sep"] + \
+            params["center_bridge_width"]
 
     xs = [x1, x2, x2, x1]
     ys = [y1, y1, y2, y2]
     ps = zip(xs, ys)
 
     # Error checking
-    w = 0.5 * params["totalwidth"]
-    h = 0.5 * params["totalheight"]
+    w = 0.5 * params["width"]
+    h = 0.5 * params["height"]
     for (x, y) in ps:
         if abs(x) > w or abs(y) > h:
             raise RuntimeError("calc_center_points: central electrode length "
@@ -175,28 +40,23 @@ def calc_center_points(params, side):
     return ps
 
 def calc_center_pads(params, side):
-    if side == Align.LEFT:
-        bpcp = params["dcpadcenterpositionsleft"]
-    else:
-        bpcp = params["dcpadcenterpositionsright"]
-
-    w = 0.5 * params["totalwidth"]
-    h = 0.5 * params["totalheight"]
+    w = 0.5 * params["width"]
+    h = 0.5 * params["height"]
 
     # Left edge of bridge
-    x1 = 0.5 * params["centerwidth"]
+    x1 = 0.5 * params["center_width"]
     # Left edge of pad
-    x2 = w - params["centerspacefromedge"] - params["dcpadx"]
+    x2 = w - params["center_pad_margin"] - params["dc_pad_width"]
     # Right edge of pad
-    x3 = w - params["centerspacefromedge"]
+    x3 = w - params["center_pad_margin"]
 
     # Top of bridge/pad
-    y1 = 0.5 * params["rflength"] + params["rfdcbondinggap"] + \
-            params["bridgewidth"]
+    y1 = 0.5 * params["rf_length"] + params["rf_center_bridge_sep"] + \
+            params["center_bridge_width"]
     # Bottom of bridge
-    y2 = y1 - params["bridgewidth"]
+    y2 = y1 - params["center_bridge_width"]
     # Bottom of pad
-    y3 = y1 - params["dcpadz"]
+    y3 = y1 - params["dc_pad_height"]
 
     xs = [x1, x1, x2, x2, x3, x3]
     ys = [y1, y2, y2, y3, y3, y1]
@@ -217,16 +77,16 @@ def calc_center_pads(params, side):
     return ps
 
 def calc_rf_points(params):
-    rfpadx = params["rfpadx"]
-    rfpadz = params["rfpadz"]
-    rfwidthleft = params["rfwidthleft"]
-    rfwidthright = params["rfwidthright"]
-    rfpadoffset = params["rfpadoffset"]
+    rfpadx = params["rf_pad_width"]
+    rfpadz = params["rf_pad_height"]
+    rfwidthleft = params["rf_width_left"]
+    rfwidthright = params["rf_width_right"]
+    rfpadoffset = params["rf_pad_offset"]
     gap = params["gap"]
-    bridgewidth = params["bridgewidth"]
-    centerlength = params["centerlength"]
-    c = 0.5 * params["centerwidth"]
-    l = 0.5 * params["rflength"]
+    bridgewidth = params["rf_bridge_width"]
+    centerlength = params["center_length"]
+    c = 0.5 * params["center_width"]
+    l = 0.5 * params["rf_length"]
 
     x1 = -c - gap - rfwidthleft
     x2 = -rfpadoffset
@@ -236,18 +96,18 @@ def calc_rf_points(params):
     x6 = -x5
 
     y1 = l
-    y2 = -l + 0.5 * rfpadz + 1.5 * bridgewidth + gap
+    y2 = -l + 0.5 * rfpadz + 0.5 * bridgewidth + gap
     y3 = -l + rfpadz
     y4 = -l
-    y5 = -l + 0.5 * rfpadz - 1.5 * bridgewidth
+    y5 = -l + 0.5 * rfpadz - 0.5 * bridgewidth
     y6 = -0.5 * centerlength - gap
 
     xs = [x1, x1, x2, x2, x3, x3, x2, x2, x1, x1, x4, x4, x5, x5, x6, x6]
     ys = [y1, y2, y2, y3, y3, y4, y4, y5, y5, y4, y4, y1, y1, y6, y6, y1]
     ps = zip(xs, ys)
 
-    w = 0.5 * params["totalwidth"]
-    h = 0.5 * params["totalheight"]
+    w = 0.5 * params["width"]
+    h = 0.5 * params["height"]
     for (x, y) in ps:
         if abs(x) > w or abs(y) > h:
             raise RuntimeError("calc_rf_points: rf electrode exceeds "
@@ -257,31 +117,29 @@ def calc_rf_points(params):
 
 # Calculate points for the ith DC electrode on the left or right side
 def calc_dc_points(params, side, i):
-    width = params["dcwidths"][i]
-    dccenterpositions = params["dccenterpositions"]
+    width = params["dc_widths"][i]
+    dccenterpositions = params["dc_center_positions"]
     gap = params["gap"]
-    dcleadspacing = params["dcleadspacing"]
-    dclength = params["dclength"]
-    dcpadx = params["dcpadx"]
-    dcpadz = params["dcpadz"]
-    rfwidthleft = params["rfwidthleft"]
-    rfwidthright = params["rfwidthright"]
-    spacefromedge = params["spacefromedge"]
-    w = 0.5 * params["totalwidth"]
-    h = 0.5 * params["totalheight"]
-    c = 0.5 * params["centerwidth"]
-    b = 0.5 * params["bridgewidth"]
+    dcleadspacing = params["dc_lead_sep"]
+    dclength = params["dc_length"]
+    dcpadx = params["dc_pad_width"]
+    dcpadz = params["dc_pad_height"]
+    rfwidthleft = params["rf_width_left"]
+    rfwidthright = params["rf_width_right"]
+    spacefromedge = params["dc_pad_margin"]
+    w = 0.5 * params["width"]
+    h = 0.5 * params["height"]
+    c = 0.5 * params["center_width"]
+    b = 0.5 * params["dc_lead_width"]
+
+    dcpcp = params["dc_pad_center_positions"]
+    vsi = params["vertical_section_index"]
+    whichturn = params["whichturn"]
 
     if side == Align.LEFT:
         x1 = c + 2 * gap + rfwidthleft
-        dcpcp = params["dcpadcenterpositionsleft"]
-        vsi = params["verticalsectionindexleft"]
-        whichturn = params["whichturnleft"]
     else:
         x1 = c + 2 * gap + rfwidthright
-        dcpcp = params["dcpadcenterpositionsright"]
-        vsi = params["verticalsectionindexright"]
-        whichturn = params["whichturnright"]
     
     x2 = x1 + dclength
     x3 = w - spacefromedge - dcpadx - (vsi[i] + 1.5) * dcleadspacing + \
@@ -315,32 +173,5 @@ def calc_dc_points(params, side, i):
         if abs(x) > w or abs(y) > h:
             raise RuntimeError("calc_dc_points: DC electrode " + str(i) +
                     " exceeds chip size")
-
-    return ps
-
-# Points for pad to place SMD thermometer
-def calc_therm_points(params, side):
-    h = 0.5 * params["totalheight"]
-
-    if side == Align.LEFT:
-        offsx = params["thermpadoffsxleft"]
-    else:
-        offsx = params["thermpadoffsxright"]
-
-    x1 = offsx
-    x2 = offsx + params["thermpadx"]
-    y1 = -h + params["thermpadz"]
-    y2 = -h
-
-    xs = [x1, x1, x2, x2]
-    ys = [y1, y2, y2, y1]
-
-    if side == Align.LEFT:
-        xs = map(operator.neg, xs)
-
-    ps = zip(xs, ys)
-
-    if side == Align.LEFT:
-        ps.reverse()
 
     return ps

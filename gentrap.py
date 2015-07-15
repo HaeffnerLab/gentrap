@@ -5,42 +5,43 @@ from dxfwrite import DXFEngine as dxf
 import os
 from Polygon import Polygon
 import sys
+import params
 
 import geo
 import layout
 from layout import Align
 
 def main(fileout):
-    params = dict(layout.DEFAULT_PARAMS)
-    params.update(layout.calc_extra_params(params))
+    parms = dict(params.DEFAULT_PARAMS)
+    parms.update(params.calc_extra_params(parms))
 
     def flip(p):
         x, y = zip(*p)
         return zip(y, x)
 
     # Get all electrode points
-    n = params["numelectrodes"]
+    n = parms["dc_count"]
     layers = {}
-    layers["0"] = [flip(layout.calc_rf_points(params))]
+    layers["0"] = [flip(layout.calc_rf_points(parms))]
     for i in range(n):
         layers[str(i + 1)] = [flip(layout.calc_dc_points(
-            params, Align.LEFT, i))]
+            parms, Align.LEFT, i))]
         layers[str(i + n + 1)] = [flip(layout.calc_dc_points(
-            params, Align.RIGHT, i))]
+            parms, Align.RIGHT, i))]
     layers[str(2 * n + 1)] = [
-        flip(layout.calc_center_points(params, Align.CENTER)),
-        flip(layout.calc_center_pads(params, Align.LEFT)),
-        flip(layout.calc_center_pads(params, Align.RIGHT))
+        flip(layout.calc_center_points(parms, Align.CENTER)),
+        flip(layout.calc_center_pads(parms, Align.LEFT)),
+        flip(layout.calc_center_pads(parms, Align.RIGHT))
     ]
 
     # Define region to cut out from ground plane
     extpolys = [
-           geo.extend_poly(params["gap"], p, True)
+           geo.extend_poly(parms["gap"], p, True)
                 for (_, polys) in layers.iteritems()
                 for p in polys]
 
-    w = 0.5 * params["totalwidth"]
-    h = 0.5 * params["totalheight"]
+    w = 0.5 * parms["width"]
+    h = 0.5 * parms["height"]
 
     gndplane = Polygon([(-h, -w), (h, -w), (h, w), (-h, w)])
     for p in extpolys:
