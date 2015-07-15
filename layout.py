@@ -1,12 +1,68 @@
 import operator
 
+# TODO rename everything nicer
+DEFAULT_PARAMS = {
+    # Number of electrodes per side
+    "numelectrodes": 10,
+    # DC electrode widths
+    "dcwidths": [400, 400, 400, 400, 400, 200, 400, 400, 400, 400],
+    # DC electrode length
+    "dclength": 300,
+    # Gap between electrodes and ground plane
+    "gap": 10,
+    # Width and length of center electrode
+    "centerwidth": 320,
+    "centerlength": 11000,
+    # Width of left and right RF electrodes
+    "rfwidthleft": 120,
+    "rfwidthright": 120,
+    # Length of both RFs
+    "rflength": 11500,
+    # Width of bridge between electrode and bonding pad
+    "bridgewidth": 50,
+    # Gap between bonding pads
+    "padgaps": [100, 100, 450, 100, 100, 100, 100, 100, 100],
+    # Overall dimensions of board
+    "totalwidth": 12000,
+    "totalheight": 12000,
+    # XXX undocumented
+    "spacefromedge": 100,
+    # XXX undocumented
+    "centerspacefromedge": 3000,
+    # XXX undocumented
+    "rfdcbondinggap": 10,
+    # XXX undocumented
+    "groundplanecutoutlength": 0,
+    # XXX undocumented
+    "dcleadspacing": 130,
+    # XXX undocumented
+    "rfpadoffset": 680,
+    # Offset in X direction of DC bonding pad array on left and right
+    "dcpadoffset": 125,
+    # Dimesnions of DC bonding pads
+    "dcpadx": 400,
+    "dcpadz": 400,
+    # Dimensions of RF bonding pads
+    "rfpadx": 400,
+    "rfpadz": 400,
+    # Dimensions and position of thermometer placement pad
+    "thermpadz": 400,
+    "thermpadx": 600,
+    "thermpadoffsxleft": 1200,
+    "thermpadoffsxright": 500,
+    # Width of fingers attached to center electrode pads
+    "fingerwidth": 40,
+    # Round dimensions to this resolution (in microns)
+    "resolution": 0.1,
+}
+
 def calc_vertical_section_index(whichturn):
     """
     Takes a "whichturn" list of 1s and -1s and creates a list which
     ascends for every stretch of 1s and descends for every stretch of -1s.
     Example:
 
-        >>> calc_vertical_secion_index([-1, -1, -1, 1, 1, 1, 1])
+        >>> calc_vertical_section_index([-1, -1, -1, 1, 1, 1, 1])
         [2, 1, 0, 0, 1, 2, 3]
     """
     # Do error checking for good measure
@@ -228,11 +284,11 @@ def calc_dc_points(params, side, i):
         whichturn = params["whichturnright"]
     
     x2 = x1 + dclength
-    x3 = w - spacefromedge - dcpadx - (vsi[i] + 0.5) * dcleadspacing + \
+    x3 = w - spacefromedge - dcpadx - (vsi[i] + 1.5) * dcleadspacing + \
             whichturn[i] * b
     x4 = w - spacefromedge - dcpadx
     x5 = w - spacefromedge
-    x6 = w - spacefromedge - dcpadx - (vsi[i] + 0.5) * dcleadspacing - \
+    x6 = w - spacefromedge - dcpadx - (vsi[i] + 1.5) * dcleadspacing - \
             whichturn[i] * b
 
     y1 = dccenterpositions[i] - 0.5 * width
@@ -288,4 +344,3 @@ def calc_therm_points(params, side):
         ps.reverse()
 
     return ps
-

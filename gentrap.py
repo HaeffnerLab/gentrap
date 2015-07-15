@@ -10,86 +10,27 @@ import geo
 import layout
 from layout import Align
 
-# TODO rename everything nicer
-DEFAULT_PARAMS = {
-    # Number of electrodes per side
-    "numelectrodes": 10,
-    # DC electrode widths
-    "dcwidths": [400, 400, 400, 400, 400, 200, 400, 400, 400, 400],
-    # DC electrode length
-    "dclength": 300,
-    # Gap between electrodes and ground plane
-    "gap": 10,
-    # Width and length of center electrode
-    "centerwidth": 320,
-    "centerlength": 11000,
-    # Width of left and right RF electrodes
-    "rfwidthleft": 120,
-    "rfwidthright": 120,
-    # Length of both RFs
-    "rflength": 11500,
-    # Width of bridge between electrode and bonding pad
-    "bridgewidth": 50,
-    # Gap between bonding pads
-    "padgaps": [100, 100, 450, 100, 100, 100, 100, 100, 100],
-    # Overall dimensions of board
-    "totalwidth": 12000,
-    "totalheight": 12000,
-    # XXX undocumented
-    "spacefromedge": 100,
-    # XXX undocumented
-    "centerspacefromedge": 3000,
-    # XXX undocumented
-    "rfdcbondinggap": 50,
-    # XXX undocumented
-    "groundplanecutoutlength": 0,
-    # XXX undocumented
-    "dcleadspacing": 130,
-    # XXX undocumented
-    "rfpadoffset": 680,
-    # Offset in X direction of DC bonding pad array on left and right
-    "dcpadoffset": 125,
-    # Dimesnions of DC bonding pads
-    "dcpadx": 400,
-    "dcpadz": 400,
-    # Dimensions of RF bonding pads
-    "rfpadx": 400,
-    "rfpadz": 400,
-    # Dimensions and position of thermometer placement pad
-    "thermpadz": 400,
-    "thermpadx": 600,
-    "thermpadoffsxleft": 1200,
-    "thermpadoffsxright": 500,
-    # Width of fingers attached to center electrode pads
-    "fingerwidth": 40,
-    # Round dimensions to this resolution (in microns)
-    "resolution": 0.1,
-}
-
 def main(fileout):
-    params = dict(DEFAULT_PARAMS)
-    params.update(layout.calc_extra_params(DEFAULT_PARAMS))
+    params = dict(layout.DEFAULT_PARAMS)
+    params.update(layout.calc_extra_params(params))
 
     def flip(p):
         x, y = zip(*p)
         return zip(y, x)
 
     # Get all electrode points
+    n = params["numelectrodes"]
     layers = {}
     layers["0"] = [flip(layout.calc_rf_points(params))]
-    for i in range(params["numelectrodes"]):
+    for i in range(n):
         layers[str(i + 1)] = [flip(layout.calc_dc_points(
             params, Align.LEFT, i))]
-        layers[str(i + 11)] = [flip(layout.calc_dc_points(
+        layers[str(i + n + 1)] = [flip(layout.calc_dc_points(
             params, Align.RIGHT, i))]
-    layers["21"] = [
+    layers[str(2 * n + 1)] = [
         flip(layout.calc_center_points(params, Align.CENTER)),
         flip(layout.calc_center_pads(params, Align.LEFT)),
         flip(layout.calc_center_pads(params, Align.RIGHT))
-    ]
-    layers["22"] = [
-        flip(layout.calc_therm_points(params, Align.LEFT)),
-        flip(layout.calc_therm_points(params, Align.RIGHT))
     ]
 
     # Define region to cut out from ground plane
