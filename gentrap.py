@@ -4,6 +4,7 @@ from datetime import datetime
 from dxfwrite import DXFEngine as dxf
 import os
 from Polygon import Polygon
+from string import Template
 import sys
 import parameters
 
@@ -12,6 +13,13 @@ import layout
 from layout import Align
 
 def main(fileout):
+    # Keep the example config around
+    if not os.path.exists(parameters.EXAMPLE_LAYOUT):
+        with open(parameters.EXAMPLE_LAYOUT_TEMPL) as f, \
+                open(parameters.EXAMPLE_LAYOUT, 'w') as g:
+            s = Template(f.read())
+            g.write(s.safe_substitute(parameters.DEFAULT_PARAMS))
+
     parms = dict(parameters.DEFAULT_PARAMS)
 
     def flip(p):

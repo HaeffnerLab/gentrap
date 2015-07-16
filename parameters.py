@@ -49,3 +49,6 @@ DEFAULT_PARAMS = {
     "rf_center_bridge_sep": 10,
 }
 
+EXAMPLE_LAYOUT = "example_layout.yaml"
+EXAMPLE_LAYOUT_TEMPL = "example_layout.yaml.templ"
+

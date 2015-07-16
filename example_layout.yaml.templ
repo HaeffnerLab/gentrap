@@ -1,0 +1,106 @@
+# This is an example of a trap layout parameter configuration file.
+# When this file is passed as a parameter to gentrap, a new trap layout
+# will be made to these exact specifications. The default parameters
+# used by gentrap are listed in comments below, along with documentation
+# of what each parameter does. To override these in a custom trap, just
+# copy this file to, e.g., my_trap.yaml, uncomment the lines of the
+# parameters you want to change, and enter the new values.
+#
+# The quantities in this document and in the layout files produced by
+# gentrap are unitless. However, it is preferable to design using some
+# target dimensions, either millimeters or micrometers.
+#
+# Also remember to use only spaces and never tabs in this document.
+---
+trap:
+# width, height: These two parameters set the total dimensions of the
+# trap chip. The ground plane of the trap will be a rectangle of these
+# dimensions with all the other electrodes carved out in the middle.
+#  width: $width
+#  height: $height
+
+# gap: The width of the empty space that separates different of
+# electrodes. The minimum value here will naturally be determined by
+# manufacturing constraints.
+#  gap: $gap
+
+# center_width, center_length: These set the size of the axial center
+# electrode. The lower extent of the electrode is determined by
+# center_length, while the upper extent always goes to the end of the
+# RF electrode.
+#  center_width: $width
+#  center_length: $center_length
+
+# center_bridge_width: The width of the electrode bridging the center
+# electrode and its bonding pads.
+#  center_bridge_width: $center_bridge_width
+
+# center_pad_margin: The distance of the center electrode bonding pads
+# from the left and right edges of the trap.
+#  center_pad_margin: $center_pad_margin
+
+# dc_count: The number of axial DC electrodes on either side of the
+# trap. The length of related parameter lists must be consistent with
+# this value.
+#  dc_count: $dc_count
+
+# dc_widths: A list giving the width (along the axis) of each axial DC
+# electrode, from bottom to top. The length of this list must be
+# consistent with the value of dc_count.
+#  dc_widths: $dc_widths
+
+# dc_length: How far the axial DC electrodes extend away from the
+# central axis.
+#  dc_length: $dc_length
+
+# dc_lead_width: The width of the electrode leads bridging the axial DC
+# electrodes to their bonding pads at the edges of the chip.
+#  dc_lead_width: $dc_lead_width
+
+# dc_lead_sep: The minimum distance which the DC leads should be
+# separated by when extending to the bonding pads.
+#  dc_lead_sep: $dc_lead_sep
+
+# dc_pad_seps: A list giving the distance separating each axial DC
+# bonding pad from the next, from bottom to top. The length of this list
+# must be consistent with the value of dc_count.
+#  dc_pad_seps: $dc_pad_seps
+
+# dc_pad_width, dc_pad_height: The width and height of the DC electrode
+# bonding pads.
+#  dc_pad_width: $dc_pad_width
+#  dc_pad_height: $dc_pad_height
+
+# dc_pad_margin: The distance separating the DC bonding pad arrays from
+# the edges of the chip.
+#  dc_pad_margin: $dc_pad_margin
+
+# dc_pad_offset: The overall vertical offset from the trap's center to
+# add to the DC bonding pad arrays.
+#  dc_pad_offset: $dc_pad_offset
+
+# rf_width_left, rf_width_right: The distance the RF electrode extends
+# away from the center electrode on the left and right, respectively.
+#  rf_width_left: $rf_width_left
+#  rf_width_right: $rf_width_right
+
+# rf_length: The total length of the RF electrode, which is vertically
+# centered on the trap.
+#  rf_length: $rf_length
+
+# rf_bridge_width: The width of the electrode bridging the RF electrode
+# and its bonding pad.
+#  rf_bridge_width: $rf_bridge_width
+
+# rf_pad_width, rf_pad_height: The dimensions of the RF electrode
+# bonding pad.
+#  rf_pad_width: $rf_bridge_width
+#  rf_pad_height: $rf_bridge_width
+
+# rf_pad_offset: The separation of the RF bonding pad from the
+# electrode.
+#  rf_pad_offset: $rf_bridge_width
+
+# rf_center_bridge_sep: The separation of the end of the RF electrode to
+# the bottom of the center electrode bridges.
+#  rf_center_bridge_sep: $rf_center_bridge_sep
