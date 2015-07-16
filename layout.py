@@ -115,10 +115,80 @@ def calc_rf_points(params):
 
     return ps
 
+def calc_vertical_section_index(whichturn):
+    """
+    Takes a "whichturn" list of 1s and -1s and creates a list which
+    ascends for every stretch of 1s and descends for every stretch of -1s.
+
+    Example:
+        >>> calc_vertical_section_index([-1, -1, -1, 1, 1, 1, 1])
+        [2, 1, 0, 0, 1, 2, 3]
+    """
+    # Do error checking for good measure
+    for i in range(len(whichturn)):
+        if whichturn[i] != 1 and whichturn[i] != -1:
+            raise RuntimeError("calc_vertical_section_index: Invalid whichturn"
+                    "index {}: {}".format(i, whichturn[i]))
+
+    my_range = lambda n: range(n) if n >= 0 else range(-n - 1, -1, -1)
+
+    vsi = []
+    count = 0
+    for i in range(len(whichturn)):
+        count += whichturn[i]
+        if i + 1 == len(whichturn) or whichturn[i] != whichturn[i + 1]:
+            vsi += my_range(count)
+            count = 0
+
+    return vsi
+
+# Calcuate dictionary of other layout parameters
+def calc_dc_params(params):
+    numelectrodes = params["dc_count"]
+    dcwidths = params["dc_widths"]
+    gap = params["gap"]
+    padgaps = params["dc_pad_seps"]
+    dcpadoffset = params["dc_pad_offset"]
+    dcpadz = params["dc_pad_height"]
+
+    # Calculate DC center positions
+
+    # Constant offsets
+    center_pos_offset = -0.5 * (sum(dcwidths) + (numelectrodes - 1) * gap)
+    pad_center_pos_offset = dcpadoffset + 0.5 * dcpadz - 0.5 * (numelectrodes *
+            dcpadz + sum(padgaps)) - (numelectrodes - 1) * gap
+
+    # DC electrode absolute center positions
+    dccenterpositions = [0.5 * dcwidths[i] + sum(dcwidths[:i]) + i * gap +
+            center_pos_offset for i in range(numelectrodes)]
+
+    # DC electrode bonding pad absolute center positioins
+    dcpadcenterpositions = [i * (dcpadz + 2 * gap) + sum(padgaps[:i]) +
+            pad_center_pos_offset for i in range(numelectrodes)]
+
+    # Calculate bonding pad bridge layout
+
+    sign = lambda x: 1 if x > 0 else -1 if x < 0 else 0
+
+    # These tell which way to turn to go from the electrode to the
+    # bonding pad, an unnecessarily complex system for sure.
+    # -1 means turn "down" (to negative z), +1 means turn "up".
+    whichturn = map(sign, map(operator.sub, dcpadcenterpositions,
+            dccenterpositions))
+
+    verticalsectionindex = calc_vertical_section_index(whichturn)
+
+    return {
+        "dc_center_positions": dccenterpositions,
+        "dc_pad_center_positions": dcpadcenterpositions,
+        "whichturn": whichturn,
+        "vertical_section_index": verticalsectionindex,
+    }
+
+
 # Calculate points for the ith DC electrode on the left or right side
 def calc_dc_points(params, side, i):
     width = params["dc_widths"][i]
-    dccenterpositions = params["dc_center_positions"]
     gap = params["gap"]
     dcleadspacing = params["dc_lead_sep"]
     dclength = params["dc_length"]
@@ -132,6 +202,10 @@ def calc_dc_points(params, side, i):
     c = 0.5 * params["center_width"]
     b = 0.5 * params["dc_lead_width"]
 
+    if "dc_center_positions" not in params:
+        params.update(calc_dc_params(params))
+
+    dccenterpositions = params["dc_center_positions"]
     dcpcp = params["dc_pad_center_positions"]
     vsi = params["vertical_section_index"]
     whichturn = params["whichturn"]

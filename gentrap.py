@@ -5,15 +5,14 @@ from dxfwrite import DXFEngine as dxf
 import os
 from Polygon import Polygon
 import sys
-import params
+import parameters
 
 import geo
 import layout
 from layout import Align
 
 def main(fileout):
-    parms = dict(params.DEFAULT_PARAMS)
-    parms.update(params.calc_extra_params(parms))
+    parms = dict(parameters.DEFAULT_PARAMS)
 
     def flip(p):
         x, y = zip(*p)
