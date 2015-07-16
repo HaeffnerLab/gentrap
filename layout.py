@@ -34,8 +34,7 @@ def calc_center_points(params, side):
     h = 0.5 * params["height"]
     for (x, y) in ps:
         if abs(x) > w or abs(y) > h:
-            raise RuntimeError("calc_center_points: central electrode length "
-                    "exceeds chip size")
+            raise RuntimeError("center electrode length exceeds chip size")
 
     return ps
 
@@ -71,8 +70,7 @@ def calc_center_pads(params, side):
 
     for (x, y) in ps:
         if abs(x) > w or abs(y) > h:
-            raise RuntimeError("calc_center_pads: center electrod pad exceeds "
-                    "chip size")
+            raise RuntimeError("center electrode pad exceeds chip size")
 
     return ps
 
@@ -110,8 +108,7 @@ def calc_rf_points(params):
     h = 0.5 * params["height"]
     for (x, y) in ps:
         if abs(x) > w or abs(y) > h:
-            raise RuntimeError("calc_rf_points: rf electrode exceeds "
-                    "chip size")
+            raise RuntimeError("rf electrode exceeds chip size")
 
     return ps
 
@@ -127,8 +124,8 @@ def calc_vertical_section_index(whichturn):
     # Do error checking for good measure
     for i in range(len(whichturn)):
         if whichturn[i] != 1 and whichturn[i] != -1:
-            raise RuntimeError("calc_vertical_section_index: Invalid whichturn"
-                    "index {}: {}".format(i, whichturn[i]))
+            raise RuntimeError(
+                    "invalid whichturn index {}: {}".format(i, whichturn[i]))
 
     my_range = lambda n: range(n) if n >= 0 else range(-n - 1, -1, -1)
 
@@ -245,7 +242,6 @@ def calc_dc_points(params, side, i):
 
     for (x, y) in ps:
         if abs(x) > w or abs(y) > h:
-            raise RuntimeError("calc_dc_points: DC electrode " + str(i) +
-                    " exceeds chip size")
+            raise RuntimeError("dc electrode {} exceeds chip size".format(i))
 
     return ps
