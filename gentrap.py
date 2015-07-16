@@ -1,27 +1,19 @@
 #!/usr/bin/env python
+import argparse
 from collections import namedtuple
 from datetime import datetime
 from dxfwrite import DXFEngine as dxf
 import os
+import parameters
 from Polygon import Polygon
 from string import Template
-import sys
-import parameters
+import yaml
 
 import geo
 import layout
 from layout import Align
 
-def main(fileout):
-    # Keep the example config around
-    if not os.path.exists(parameters.EXAMPLE_LAYOUT):
-        with open(parameters.EXAMPLE_LAYOUT_TEMPL) as f, \
-                open(parameters.EXAMPLE_LAYOUT, 'w') as g:
-            s = Template(f.read())
-            g.write(s.safe_substitute(parameters.DEFAULT_PARAMS))
-
-    parms = dict(parameters.DEFAULT_PARAMS)
-
+def main(parms, fileout):
     def flip(p):
         x, y = zip(*p)
         return zip(y, x)
@@ -72,14 +64,36 @@ def main(fileout):
         for q in quads:
             drawing.add(dxf.face3d(flip(q), layer=k))
     drawing.save()
-    print("Wrote to '{}'".format(path))
+    print("Wrote to '{}'".format(fileout))
 
     return 0
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        path = os.path.abspath(sys.argv[1])
-    else:
-        path = os.path.abspath(
-                datetime.now().strftime("./newtrap_%Y%m%d_%H%M%S.dxf"))
-    main(path)
+    # Command line parsing
+    DESC = "Generate ion trap layout files from specification."
+    DEFAULT_PATH = os.path.abspath(datetime.now().strftime(
+            "./newtrap_%Y%m%d_%H%M%S.dxf"))
+
+    parser = argparse.ArgumentParser(description=DESC)
+    parser.add_argument("layout", metavar="layout.yaml", type=str, nargs="?",
+            default=None, help="trap layout config file")
+    parser.add_argument("-o", "--output", type=str, action="store",
+            default=DEFAULT_PATH, help="output file")
+
+    args = parser.parse_args()
+
+    # Initialize parameters
+    params = parameters.DEFAULT_PARAMS
+    if args.layout is not None:
+        with open(args.layout) as f:
+            tree = yaml.safe_load(f)
+            params.update(tree["layout"])
+
+    # Keep the example config around
+    if not os.path.exists(parameters.EXAMPLE_LAYOUT):
+        with open(parameters.EXAMPLE_LAYOUT_TEMPL) as f, \
+                open(parameters.EXAMPLE_LAYOUT, 'w') as g:
+            s = Template(f.read())
+            g.write(s.safe_substitute(parameters.DEFAULT_PARAMS))
+
+    main(params, args.output)
