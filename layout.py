@@ -1,12 +1,46 @@
 import operator
 
+DEFAULT_PARAMS = {
+    "width": 12000,
+    "height": 12000,
+    "gap": 10,
+    "center_width": 320,
+    "center_length": 11000,
+    "center_bridge_width": 50,
+    "center_pad_margin": 3000,
+    "dc_count": 10,
+    "dc_widths": [400, 400, 400, 400, 400, 200, 400, 400, 400, 400],
+    "dc_length": 300,
+    "dc_lead_width": 50,
+    "dc_lead_sep": 130,
+    "dc_pad_seps": [100, 100, 450, 100, 100, 100, 100, 100, 100],
+    "dc_pad_width": 400,
+    "dc_pad_height": 400,
+    "dc_pad_margin": 100,
+    "dc_pad_offset": 125,
+    "rf_width_left": 120,
+    "rf_width_right": 120,
+    "rf_length": 11500,
+    "rf_bridge_width": 150,
+    "rf_pad_width": 400,
+    "rf_pad_height": 400,
+    "rf_pad_offset": 680,
+    "rf_center_bridge_sep": 0,
+}
+"""Default/sample trap layout parameters.
+
+See example_layout.yaml for documentation of each value."""
+
+EXAMPLE_LAYOUT = "example_layout.yaml"
+EXAMPLE_LAYOUT_TEMPL = "example_layout.yaml.templ"
+
 class Align:
     LEFT = -1
     CENTER = 0
     RIGHT = 1
 
 # Faces for the center electrode.
-def calc_center_points(params):
+def center_points(params):
     w = 0.5 * params["width"]
     h = 0.5 * params["height"]
 
@@ -36,7 +70,7 @@ def calc_center_points(params):
 
     return ps
 
-def calc_rf_points(params):
+def rf_points(params):
     rfpadx = params["rf_pad_width"]
     rfpadz = params["rf_pad_height"]
     rfwidthleft = params["rf_width_left"]
@@ -74,13 +108,13 @@ def calc_rf_points(params):
 
     return ps
 
-def calc_vertical_section_index(whichturn):
+def vertical_section_index(whichturn):
     """
     Takes a "whichturn" list of 1s and -1s and creates a list which
     ascends for every stretch of 1s and descends for every stretch of -1s.
 
     Example:
-        >>> calc_vertical_section_index([-1, -1, -1, 1, 1, 1, 1])
+        >>> vertical_section_index([-1, -1, -1, 1, 1, 1, 1])
         [2, 1, 0, 0, 1, 2, 3]
     """
     # Do error checking for good measure
@@ -102,7 +136,7 @@ def calc_vertical_section_index(whichturn):
     return vsi
 
 # Calcuate dictionary of other layout parameters
-def calc_dc_params(params):
+def dc_params(params):
     numelectrodes = params["dc_count"]
     dcwidths = params["dc_widths"]
     gap = params["gap"]
@@ -135,7 +169,7 @@ def calc_dc_params(params):
     whichturn = map(sign, map(operator.sub, dcpadcenterpositions,
             dccenterpositions))
 
-    verticalsectionindex = calc_vertical_section_index(whichturn)
+    verticalsectionindex = vertical_section_index(whichturn)
 
     return {
         "dc_center_positions": dccenterpositions,
@@ -146,7 +180,7 @@ def calc_dc_params(params):
 
 
 # Calculate points for the ith DC electrode on the left or right side
-def calc_dc_points(params, side, i):
+def dc_points(params, side, i):
     width = params["dc_widths"][i]
     gap = params["gap"]
     dcleadspacing = params["dc_lead_sep"]
@@ -162,7 +196,7 @@ def calc_dc_points(params, side, i):
     b = 0.5 * params["dc_lead_width"]
 
     if "dc_center_positions" not in params:
-        params.update(calc_dc_params(params))
+        params.update(dc_params(params))
 
     dccenterpositions = params["dc_center_positions"]
     dcpcp = params["dc_pad_center_positions"]

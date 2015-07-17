@@ -4,7 +4,6 @@ from collections import namedtuple
 from datetime import datetime
 from dxfwrite import DXFEngine as dxf
 import os
-import parameters
 from Polygon import Polygon
 from string import Template
 import yaml
@@ -23,11 +22,11 @@ def main(parms, fileout):
     w = 0.5 * parms["width"]
     h = 0.5 * parms["height"]
     layers = {}
-    layers["0"] = layout.calc_rf_points(parms)
+    layers["0"] = layout.rf_points(parms)
     for i in range(n):
-        layers[str(i + 1)] = layout.calc_dc_points(parms, Align.LEFT, i)
-        layers[str(i + n + 1)] = layout.calc_dc_points(parms, Align.RIGHT, i)
-    layers[str(2 * n + 1)] = layout.calc_center_points(parms)
+        layers[str(i + 1)] = layout.dc_points(parms, Align.LEFT, i)
+        layers[str(i + n + 1)] = layout.dc_points(parms, Align.RIGHT, i)
+    layers[str(2 * n + 1)] = layout.center_points(parms)
 
     # Workaround for GPC's bottom-up triangulization
     for (k, p) in layers.iteritems():
@@ -80,7 +79,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Initialize parameters
-    params = parameters.DEFAULT_PARAMS
+    params = layout.DEFAULT_PARAMS
     if args.layout is not None:
         with open(args.layout) as f:
             tree = yaml.safe_load(f)
@@ -88,10 +87,10 @@ if __name__ == "__main__":
                 params.update(tree["layout"])
 
     # Keep the example config around
-    if not os.path.exists(parameters.EXAMPLE_LAYOUT):
-        with open(parameters.EXAMPLE_LAYOUT_TEMPL) as f, \
-                open(parameters.EXAMPLE_LAYOUT, 'w') as g:
+    if not os.path.exists(layout.EXAMPLE_LAYOUT):
+        with open(layout.EXAMPLE_LAYOUT_TEMPL) as f, \
+                open(layout.EXAMPLE_LAYOUT, 'w') as g:
             s = Template(f.read())
-            g.write(s.safe_substitute(parameters.DEFAULT_PARAMS))
+            g.write(s.safe_substitute(layout.DEFAULT_PARAMS))
 
     main(params, args.output)
