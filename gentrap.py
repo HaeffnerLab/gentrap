@@ -75,8 +75,9 @@ if __name__ == "__main__":
             "./newtrap_%Y%m%d_%H%M%S.dxf"))
 
     parser = argparse.ArgumentParser(description=DESC)
-    parser.add_argument("layout", metavar="layout.yaml", type=str, nargs="?",
-            default=None, help="trap layout config file")
+    parser.add_argument("layout", metavar="LAYOUT", type=str, nargs="?",
+            default=None, help="trap layout config file; see "
+            "example_config.yaml for file format")
     parser.add_argument("-o", "--output", type=str, action="store",
             default=DEFAULT_PATH, help="output file")
 
@@ -87,7 +88,8 @@ if __name__ == "__main__":
     if args.layout is not None:
         with open(args.layout) as f:
             tree = yaml.safe_load(f)
-            params.update(tree["layout"])
+            if tree["layout"] is not None:
+                params.update(tree["layout"])
 
     # Keep the example config around
     if not os.path.exists(parameters.EXAMPLE_LAYOUT):
