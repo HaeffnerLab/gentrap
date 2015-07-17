@@ -1,76 +1,38 @@
 import operator
 
 class Align:
-    BOTTOM = -2
     LEFT = -1
     CENTER = 0
     RIGHT = 1
-    TOP = 2
 
 # Faces for the center electrode.
-def calc_center_points(params, side):
-    d = 0.5 * params["center_width"]
+def calc_center_points(params):
+    w = 0.5 * params["width"]
+    h = 0.5 * params["height"]
 
-    if side == Align.CENTER:
-        x1 = -d
-        x2 = d
-    elif side == Align.RIGHT:
-        x1 = 0.5 * params["gap"]
-        x2 = d
-    else:
-        x1 = -0.5 * params["gap"]
-        x2 = -d
+    # Top to bottom
+    y1 = 0.5 * params["rf_length"] + params["rf_center_bridge_sep"] + \
+            params["gap"] + params["center_bridge_width"]
+    y2 = y1 - params["center_bridge_width"]
+    y3 = y1 - params["dc_pad_height"]
+    y4 = -0.5 * params["center_length"]
 
-    y1 = -0.5 * params["center_length"]
-    y2 = 0.5 * params["rf_length"] + params["rf_center_bridge_sep"] + \
-            params["center_bridge_width"]
+    # Right to left
+    x1 = w - params["center_pad_margin"]
+    x2 = x1 - params["dc_pad_width"]
+    x3 = 0.5 * params["center_width"]
+    x4 = -x3
+    x5 = -x2
+    x6 = -x1
 
-    xs = [x1, x2, x2, x1]
-    ys = [y1, y1, y2, y2]
+    xs = [x6, x6, x5, x5, x4, x4, x3, x3, x2, x2, x1, x1]
+    ys = [y1, y3, y3, y2, y2, y4, y4, y2, y2, y3, y3, y1]
     ps = zip(xs, ys)
 
     # Error checking
-    w = 0.5 * params["width"]
-    h = 0.5 * params["height"]
     for (x, y) in ps:
         if abs(x) > w or abs(y) > h:
             raise RuntimeError("center electrode length exceeds chip size")
-
-    return ps
-
-def calc_center_pads(params, side):
-    w = 0.5 * params["width"]
-    h = 0.5 * params["height"]
-
-    # Left edge of bridge
-    x1 = 0.5 * params["center_width"]
-    # Left edge of pad
-    x2 = w - params["center_pad_margin"] - params["dc_pad_width"]
-    # Right edge of pad
-    x3 = w - params["center_pad_margin"]
-
-    # Top of bridge/pad
-    y1 = 0.5 * params["rf_length"] + params["rf_center_bridge_sep"] + \
-            params["center_bridge_width"]
-    # Bottom of bridge
-    y2 = y1 - params["center_bridge_width"]
-    # Bottom of pad
-    y3 = y1 - params["dc_pad_height"]
-
-    xs = [x1, x1, x2, x2, x3, x3]
-    ys = [y1, y2, y2, y3, y3, y1]
-
-    if side == Align.LEFT:
-        xs = map(operator.neg, xs)
-
-    ps = zip(xs, ys)
-
-    if side == Align.LEFT:
-        ps.reverse()
-
-    for (x, y) in ps:
-        if abs(x) > w or abs(y) > h:
-            raise RuntimeError("center electrode pad exceeds chip size")
 
     return ps
 

@@ -20,45 +20,41 @@ def main(parms, fileout):
 
     # Get all electrode points
     n = parms["dc_count"]
+    w = 0.5 * parms["width"]
+    h = 0.5 * parms["height"]
     layers = {}
-    layers["0"] = [flip(layout.calc_rf_points(parms))]
+    layers["0"] = layout.calc_rf_points(parms)
     for i in range(n):
-        layers[str(i + 1)] = [flip(layout.calc_dc_points(
-            parms, Align.LEFT, i))]
-        layers[str(i + n + 1)] = [flip(layout.calc_dc_points(
-            parms, Align.RIGHT, i))]
-    layers[str(2 * n + 1)] = [
-        flip(layout.calc_center_points(parms, Align.CENTER)),
-        flip(layout.calc_center_pads(parms, Align.LEFT)),
-        flip(layout.calc_center_pads(parms, Align.RIGHT))
-    ]
+        layers[str(i + 1)] = layout.calc_dc_points(parms, Align.LEFT, i)
+        layers[str(i + n + 1)] = layout.calc_dc_points(parms, Align.RIGHT, i)
+    layers[str(2 * n + 1)] = layout.calc_center_points(parms)
+
+    # Workaround for GPC's bottom-up triangulization
+    for (k, p) in layers.iteritems():
+        layers[k] = flip(p)
 
     # Define region to cut out from ground plane
     extpolys = [
            geo.extend_poly(parms["gap"], p, True)
-                for (_, polys) in layers.iteritems()
-                for p in polys]
+                for (_, p) in layers.iteritems()]
 
-    w = 0.5 * parms["width"]
-    h = 0.5 * parms["height"]
-
-    gndplane = Polygon([(-h, -w), (h, -w), (h, w), (-h, w)])
+    gndplane = Polygon(flip([(-w, -h), (w, -h), (w, h), (-w, h)]))
     for p in extpolys:
         gndplane = gndplane - Polygon(p)
 
-    layers["GROUND"] = [gndplane]
+    layers["GROUND"] = gndplane
 
     # Turn all geometry into quads
-    for k in layers.keys():
-        # Each layer is a list of polys, and mapping tristrip_to_quads
-        # gives a list of lists of quads, which needs to be flattened
+    for (k, p) in layers.iteritems():
+        # Mapping tristrip_to_quads gives a list of lists of quads,
+        # which needs to be flattened
         layers[k] = [
-                quad for p in layers[k]
-                     for quads in map(
-                            geo.tristrip_to_quads, Polygon(p).triStrip())
+                quad for quads in map(
+                         geo.tristrip_to_quads,
+                         Polygon(layers[k]).triStrip())
                      for quad in quads]
 
-    # Create DXF file
+    # Render to DXF
     drawing = dxf.drawing(fileout)
     for (k, quads) in layers.iteritems():
         for q in quads:

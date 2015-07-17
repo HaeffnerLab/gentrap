@@ -46,7 +46,7 @@ DEFAULT_PARAMS = {
     "rf_pad_offset": 680,
     # Distance end of RF electrode to center electrode bonding
     # pad bridge
-    "rf_center_bridge_sep": 10,
+    "rf_center_bridge_sep": 0,
 }
 
 EXAMPLE_LAYOUT = "example_layout.yaml"
