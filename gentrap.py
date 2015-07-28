@@ -59,24 +59,28 @@ def main(parms, fileout):
         for q in quads:
             drawing.add(dxf.face3d(flip(q), layer=k))
     drawing.save()
-    print("Wrote to '{}'".format(fileout))
 
     return 0
 
 if __name__ == "__main__":
     # Command line parsing
     DESC = "Generate ion trap layout files from specification."
-    DEFAULT_PATH = os.path.abspath(datetime.now().strftime(
-            "./newtrap_%Y%m%d_%H%M%S.dxf"))
+    DEFAULT_PATH = "example_layout.dxf"
 
     parser = argparse.ArgumentParser(description=DESC)
     parser.add_argument("layout", metavar="LAYOUT", type=str, nargs="?",
             default=None, help="trap layout config file; see "
             "example_config.yaml for file format")
     parser.add_argument("-o", "--output", type=str, action="store",
-            default=DEFAULT_PATH, help="output file")
+            default=None, help="output file")
 
     args = parser.parse_args()
+
+    if args.output is None:
+        if args.layout is None:
+            args.output = DEFAULT_PATH
+        else:
+            args.output = os.path.splitext(args.layout)[0] + ".dxf"
 
     # Initialize parameters
     params = layout.DEFAULT_PARAMS
@@ -94,3 +98,4 @@ if __name__ == "__main__":
             g.write(s.safe_substitute(layout.DEFAULT_PARAMS))
 
     main(params, args.output)
+    print("Wrote to '{}'".format(args.output))
