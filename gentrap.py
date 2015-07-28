@@ -90,12 +90,5 @@ if __name__ == "__main__":
             if tree["layout"] is not None:
                 params.update(tree["layout"])
 
-    # Keep the example config around
-    if not os.path.exists(layout.EXAMPLE_LAYOUT):
-        with open(layout.EXAMPLE_LAYOUT_TEMPL) as f, \
-                open(layout.EXAMPLE_LAYOUT, 'w') as g:
-            s = Template(f.read())
-            g.write(s.safe_substitute(layout.DEFAULT_PARAMS))
-
     main(params, args.output)
     print("Wrote to '{}'".format(args.output))
