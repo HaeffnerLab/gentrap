@@ -17,7 +17,8 @@ DEFAULT_PARAMS = {
     "dc_pad_width": 400,
     "dc_pad_height": 400,
     "dc_pad_margin": 100,
-    "dc_pad_offset": 125,
+    "dc_pad_offset_left": 0,
+    "dc_pad_offset_right": 0,
     "rf_width_left": 120,
     "rf_width_right": 120,
     "rf_length": 11500,
@@ -139,23 +140,22 @@ def dc_params(params):
     dcwidths = params["dc_widths"]
     gap = params["gap"]
     padgaps = params["dc_pad_seps"]
-    dcpadoffset = params["dc_pad_offset"]
+    dcpadoffsetl = params["dc_pad_offset_left"]
+    dcpadoffsetr = params["dc_pad_offset_right"]
     dcpadz = params["dc_pad_height"]
 
-    # Calculate DC center positions
-
-    # Constant offsets
-    center_pos_offset = -0.5 * (sum(dcwidths) + (numelectrodes - 1) * gap)
-    pad_center_pos_offset = dcpadoffset + 0.5 * dcpadz - 0.5 * (numelectrodes *
-            dcpadz + sum(padgaps)) - (numelectrodes - 1) * gap
-
     # DC electrode absolute center positions
+    centerposoffs = -0.5 * (sum(dcwidths) + (numelectrodes - 1) * gap)
     dccenterpositions = [0.5 * dcwidths[i] + sum(dcwidths[:i]) + i * gap +
-            center_pos_offset for i in range(numelectrodes)]
+            centerposoffs for i in range(numelectrodes)]
 
-    # DC electrode bonding pad absolute center positioins
-    dcpadcenterpositions = [i * (dcpadz + 2 * gap) + sum(padgaps[:i]) +
-            pad_center_pos_offset for i in range(numelectrodes)]
+    # DC electrode bonding pad absolute center positions
+    padcenterposoffs = -0.5 * (numelectrodes * dcpadz + (numelectrodes - 1) * 2
+            * gap + sum(padgaps)) + 0.5 * dcpadz
+    dcpadcenterpositionsl = [i * (dcpadz + 2 * gap) + sum(padgaps[:i]) +
+            dcpadoffsetl + padcenterposoffs for i in range(numelectrodes)]
+    dcpadcenterpositionsr = [i * (dcpadz + 2 * gap) + sum(padgaps[:i]) +
+            dcpadoffsetr + padcenterposoffs for i in range(numelectrodes)]
 
     # Calculate bonding pad bridge layout
 
@@ -164,16 +164,22 @@ def dc_params(params):
     # These tell which way to turn to go from the electrode to the
     # bonding pad, an unnecessarily complex system for sure.
     # -1 means turn "down" (to negative z), +1 means turn "up".
-    whichturn = map(sign, map(operator.sub, dcpadcenterpositions,
+    whichturnl = map(sign, map(operator.sub, dcpadcenterpositionsl,
+            dccenterpositions))
+    whichturnr = map(sign, map(operator.sub, dcpadcenterpositionsr,
             dccenterpositions))
 
-    verticalsectionindex = vertical_section_index(whichturn)
+    verticalsectionindexl = vertical_section_index(whichturnl)
+    verticalsectionindexr = vertical_section_index(whichturnl)
 
     return {
         "dc_center_positions": dccenterpositions,
-        "dc_pad_center_positions": dcpadcenterpositions,
-        "whichturn": whichturn,
-        "vertical_section_index": verticalsectionindex,
+        "dc_pad_center_positions_left": dcpadcenterpositionsl,
+        "dc_pad_center_positions_right": dcpadcenterpositionsr,
+        "whichturn_left": whichturnl,
+        "whichturn_right": whichturnr,
+        "vertical_section_index_left": verticalsectionindexl,
+        "vertical_section_index_right": verticalsectionindexr,
     }
 
 
@@ -193,13 +199,17 @@ def dc_points(params, side, i):
     c = 0.5 * params["center_width"]
     b = 0.5 * params["dc_lead_width"]
 
-    if "dc_center_positions" not in params:
-        params.update(dc_params(params))
+    dcparms = dc_params(params)
 
-    dccenterpositions = params["dc_center_positions"]
-    dcpcp = params["dc_pad_center_positions"]
-    vsi = params["vertical_section_index"]
-    whichturn = params["whichturn"]
+    if side == Align.LEFT:
+        dcpcp = dcparms["dc_pad_center_positions_left"]
+        whichturn = dcparms["whichturn_left"]
+        vsi = dcparms["vertical_section_index_left"]
+    else:
+        dcpcp = dcparms["dc_pad_center_positions_right"]
+        whichturn = dcparms["whichturn_right"]
+        vsi = dcparms["vertical_section_index_right"]
+    dccenterpositions = dcparms["dc_center_positions"]
 
     if side == Align.LEFT:
         x1 = c + 2 * gap + rfwidthleft
