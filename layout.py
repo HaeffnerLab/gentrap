@@ -109,28 +109,26 @@ def rf_points(params):
 
 def vertical_section_index(whichturn):
     """
-    Takes a "whichturn" list of 1s and -1s and creates a list which
-    ascends for every stretch of 1s and descends for every stretch of -1s.
+    Takes a list of 1s, 0s, and -1s and creates a list which ascends for
+    every stretch of 1s and descends for every stretch of -1s.
 
     Example:
         >>> vertical_section_index([-1, -1, -1, 1, 1, 1, 1])
         [2, 1, 0, 0, 1, 2, 3]
     """
-    # Do error checking for good measure
-    for i in range(len(whichturn)):
-        if whichturn[i] != 1 and whichturn[i] != -1:
-            raise RuntimeError(
-                    "invalid whichturn index {}: {}".format(i, whichturn[i]))
 
     my_range = lambda n: range(n) if n >= 0 else range(-n - 1, -1, -1)
 
     vsi = []
     count = 0
     for i in range(len(whichturn)):
-        count += whichturn[i]
-        if i + 1 == len(whichturn) or whichturn[i] != whichturn[i + 1]:
-            vsi += my_range(count)
-            count = 0
+        if whichturn[i] == 0:
+            vsi += [0]
+        else:
+            count += whichturn[i]
+            if i + 1 == len(whichturn) or whichturn[i] != whichturn[i + 1]:
+                vsi += my_range(count)
+                count = 0
 
     return vsi
 
@@ -216,25 +214,40 @@ def dc_points(params, side, i):
     else:
         x1 = c + 2 * gap + rfwidthright
     
-    x2 = x1 + dclength
-    x3 = w - spacefromedge - dcpadx - (vsi[i] + 1.5) * dcleadspacing + \
-            whichturn[i] * b
-    x4 = w - spacefromedge - dcpadx
-    x5 = w - spacefromedge
-    x6 = w - spacefromedge - dcpadx - (vsi[i] + 1.5) * dcleadspacing - \
-            whichturn[i] * b
+    if whichturn[i] == 0:
+        x2 = x1 + dclength
+        x3 = w - spacefromedge - dcpadx
+        x4 = w - spacefromedge
 
-    y1 = dccenterpositions[i] - 0.5 * width
-    y2 = dccenterpositions[i] - b
-    y3 = dcpcp[i] - b
-    y4 = dcpcp[i] - 0.5 * dcpadz
-    y5 = dcpcp[i] + 0.5 * dcpadz
-    y6 = dcpcp[i] + b
-    y7 = dccenterpositions[i] + b
-    y8 = dccenterpositions[i] + 0.5 * width
+        y1 = dccenterpositions[i] - 0.5 * width
+        y2 = dccenterpositions[i] - b
+        y3 = dccenterpositions[i] - 0.5 * dcpadz
+        y4 = dccenterpositions[i] + 0.5 * dcpadz
+        y5 = dccenterpositions[i] + b
+        y6 = dccenterpositions[i] + 0.5 * width
 
-    xs = [x1, x2, x2, x3, x3, x4, x4, x5, x5, x4, x4, x6, x6, x2, x2, x1]
-    ys = [y1, y1, y2, y2, y3, y3, y4, y4, y5, y5, y6, y6, y7, y7, y8, y8]
+        xs = [x1, x2, x2, x3, x3, x4, x4, x3, x3, x2, x2, x1]
+        ys = [y1, y1, y2, y2, y3, y3, y4, y4, y5, y5, y6, y6]
+    else:
+        x2 = x1 + dclength
+        x3 = w - spacefromedge - dcpadx - (vsi[i] + 1.5) * dcleadspacing + \
+                whichturn[i] * b
+        x4 = w - spacefromedge - dcpadx
+        x5 = w - spacefromedge
+        x6 = w - spacefromedge - dcpadx - (vsi[i] + 1.5) * dcleadspacing - \
+                whichturn[i] * b
+
+        y1 = dccenterpositions[i] - 0.5 * width
+        y2 = dccenterpositions[i] - b
+        y3 = dcpcp[i] - b
+        y4 = dcpcp[i] - 0.5 * dcpadz
+        y5 = dcpcp[i] + 0.5 * dcpadz
+        y6 = dcpcp[i] + b
+        y7 = dccenterpositions[i] + b
+        y8 = dccenterpositions[i] + 0.5 * width
+
+        xs = [x1, x2, x2, x3, x3, x4, x4, x5, x5, x4, x4, x6, x6, x2, x2, x1]
+        ys = [y1, y1, y2, y2, y3, y3, y4, y4, y5, y5, y6, y6, y7, y7, y8, y8]
 
     if side == Align.LEFT:
         xs = map(operator.neg, xs)
