@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 import argparse
-from collections import namedtuple
-from datetime import datetime
 from dxfwrite import DXFEngine as dxf
 import os
 from Polygon import Polygon
-from string import Template
 import yaml
 
 import geo
