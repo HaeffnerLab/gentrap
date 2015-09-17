@@ -85,7 +85,9 @@ if __name__ == "__main__":
         with open(args.layout) as f:
             tree = yaml.safe_load(f)
             if tree["layout"] is not None:
-                params.update(tree["layout"])
+                params.update(tree)
+            else :
+                print("Layout file does not have a name - Using default parameters")
 
     main(params, args.output)
     print("Wrote to '{}'".format(args.output))
